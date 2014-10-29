@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block header %}Search{% endblock %}
+{% block content %}
+<form method="post" class="pure-form pure-form-stacked">
+    <fieldset>
+        <legend>Search the Chronicling America database</legend>
+
+        <div class="pure-g">
+            <div class="pure-u-1">
+                <label for="name">Search name (for later recollection)</label>
+                <input name="name" type="text">
+            </div>
+        </div>
+        <div class="pure-g">
+
+            <div class="pure-u-1-5">
+                <label for="ortext">...with <strong>any</strong> of the words</label>
+                <input name="ortext" type="text">
+            </div>
+
+            <div class="pure-u-1-5">
+                <label for="andtext">...with <strong>all</strong> of the words</label>
+                <input name="andtext" type="text">
+            </div>
+
+            <div class="pure-u-1-5">
+                <label for="phrasetext">...with the <strong>phrase</strong></label>
+                <input name="phrasetext" type="text">
+            </div>
+        </div>
+        <div class="pure-g">
+
+            <div class="pure-u-1-5">
+                <label for="date1">From</label>
+                <select name="date1">
+                    {% for i in range(date_from, date_to + 1) %}
+                    {% if i == date_from %}
+                    <option value="{{ i }}" selected="selected"> {{ i }}</option>
+                    {% else %}
+                    <option value="{{ i }}"> {{ i }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="pure-u-1-5">
+                <label for="date2">To</label>
+                <select name="date2">
+                    {% for i in range(date_from, date_to + 1) %}
+                    {% if i == date_to %}
+                    <option value="{{ i }}" selected="selected"> {{ i }}</option>
+                    {% else %}
+                    <option value="{{ i }}"> {{ i }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <input type="submit" class="pure-button pure-button-primary" value="Start searching!"/>
+    </fieldset>
+</form>
+{% endblock %}

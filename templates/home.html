@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block header %}Home{% endblock %}
+{% block content %}
+<p>
+    <em>LoCMiner</em> is a very simple application for extracting text from the Library of Congress database.
+</p>
+<p>
+    Start <a href="{{ url_for('search') }}">searching</a> or browse the <a href="{{ url_for('show_searches') }}">completed searches</a>.
+</p>
+{% endblock %}

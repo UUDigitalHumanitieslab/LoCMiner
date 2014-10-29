@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" type="text/css" href="//yui.yahooapis.com/pure/0.5.0/pure-min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.js"></script>
+    <title>{% block title %}{% endblock %} - LoCMiner</title>
+    {% endblock %}
+</head>
+<body>
+<div class="pure-g wrapper">
+    <div class="pure-u-1-8"></div>
+    <div id="content" class="pure-u-3-4">
+        <div class="header">
+            <h1><a href="{{ url_for('home') }}">LoCMiner</a></h1>
+
+            <h2>{% block header %}{% endblock %}</h2>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash">
+            {% for category, message in messages %}
+            <p class="{{ category }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="content">{% block content %}{% endblock %}</div>
+    </div>
+    <div class="pure-u-1-8"></div>
+</div>
+</body>
+</html>
