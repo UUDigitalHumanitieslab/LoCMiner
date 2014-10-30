@@ -3,3 +3,6 @@
 
 # SQL lite database
 p.db
+
+# IDE
+.idea
