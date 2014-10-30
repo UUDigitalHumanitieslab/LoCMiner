@@ -1,7 +1,10 @@
-from flask import Flask, request, render_template, redirect, url_for, make_response, flash
+from flask import Flask, request, render_template, redirect, url_for, make_response, flash, Response
 from flask.ext.sqlalchemy import SQLAlchemy
-import os
 import requests
+import os
+import StringIO
+import csv
+import zipfile
 from datetime import datetime
 
 BASE_URL = 'http://chroniclingamerica.loc.gov'
@@ -49,6 +52,7 @@ class Result(db.Model):
     state = db.Column(db.String(200))
     publisher = db.Column(db.String(200))
     language = db.Column(db.String(200))
+    ocr = db.Column(db.Text)
 
     def __init__(self, saved_search, result):
         self.saved_search = saved_search
@@ -59,6 +63,7 @@ class Result(db.Model):
         self.state = self.as_list(result['state'])
         self.publisher = result['publisher']
         self.language = self.as_list(result['language'])
+        self.ocr = result['ocr_eng']
 
     def __repr__(self):
         return '<Result %r>' % self.id
@@ -152,14 +157,55 @@ def delete_search(search_id):
 def download(search_id):
     """ Returns a list of all OCR Results for a SavedSearch. """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
-    results = ss.results.all()
+    results = ss.results.order_by(Result.date)
 
     texts = list()
     for r in results:
         texts.append(BASE_URL + r.lccn + 'ocr.txt')
 
     response = make_response('<br>'.join(texts))
-    # response.headers["Content-Disposition"] = "attachment; filename=results.txt"
+    return response
+
+
+@app.route('/metadata/<search_id>/')
+def metadata(search_id):
+    """ Returns a .csv-file of all Results Metadata for a SavedSearch """
+    ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
+    results = ss.results.order_by(Result.date)
+
+    def generate():
+        for n, result in enumerate(results):
+            output = StringIO.StringIO()
+            writer = csv.writer(output, dialect='excel', delimiter=';', quoting=csv.QUOTE_MINIMAL)
+            if n == 0:
+                header = ['lccn', 'Date', 'Newspaper', 'Place',
+                          'State', 'Publisher', 'Language']
+                writer.writerow(header)
+            row = [result.lccn, result.date, result.newspaper, result.place,
+                   result.state, result.publisher, result.language]
+            writer.writerow(row)
+            yield output.getvalue()
+
+    return Response(generate(), mimetype='text/csv',
+                    headers={'Content-Disposition': 'attachment;filename=metadata.csv'})
+
+
+@app.route('/zip/<search_id>/')
+def to_zip(search_id):
+    """ Returns a .zip-file of all OCR Results for a SavedSearch """
+    ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
+    results = ss.results.order_by(Result.date)
+
+    output = StringIO.StringIO()
+    zf = zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED)
+    for result in results:
+        text = StringIO.StringIO()
+        text.write(result.ocr.encode('utf-8'))
+        zf.writestr(result.lccn[1:-1].replace('/', '|') + '.txt', text.getvalue())
+    zf.close()
+
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment;filename=results.zip'
     return response
 
 
@@ -199,7 +245,7 @@ def mine(saved_search, search_term):
 
 
 def write_result(s, r):
-    """ Writes a single result to the database. """
+    """ Writes a single Result to the database. """
     j = r.json()
     for item in j['items']:
         result = Result(s, item)

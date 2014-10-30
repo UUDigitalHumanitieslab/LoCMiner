@@ -6,36 +6,48 @@
     $(document).ready(function() {
         $('#results').DataTable();
     });
+
 </script>
-<p>This search yielded {{ results | count }} results.
-You can analyze the results with <a href="http://voyant-tools.org/" target="_blank">Voyant</a>.
-Use the contents of <a href="{{ url_for('download', search_id=saved_search.id) }}">this results file</a> as input there.</p>
+<p>This search yielded {{ results | count }} results.</p>
+<ul>
+    <li>
+        You can analyze the results with <a href="http://voyant-tools.org/" target="_blank">Voyant</a>.
+        Use the contents of <a href="{{ url_for('download', search_id=saved_search.id) }}">this results file</a> as
+        input there.
+    </li>
+    <li>
+        You can download the metadata of the search results <a href="{{ url_for('metadata', search_id=saved_search.id) }}">here</a>.
+    </li>
+    <li>
+        You can download a .zip-file of all the OCR-files here <a href="{{ url_for('to_zip', search_id=saved_search.id) }}">here</a>.
+    </li>
+</ul>
 <table id="results" class="display" cellspacing="0" width="100%">
     <thead>
-        <tr>
-            <th>Date</th>
-            <th>Newspaper</th>
-            <th>Place</th>
-            <th>State</th>
-            <th>Publisher</th>
-            <th>Language</th>
-            <th>Actions</th>
-        </tr>
+    <tr>
+        <th>Date</th>
+        <th>Newspaper</th>
+        <th>Place</th>
+        <th>State</th>
+        <th>Publisher</th>
+        <th>Language</th>
+        <th>Actions</th>
+    </tr>
     </thead>
     <tbody>
-        {% for r in results %}
-        <tr>
-            <td>{{ r.date }}</td>
-            <td>{{ r.newspaper }}</td>
-            <td>{{ r.place }}</td>
-            <td>{{ r.state }}</td>
-            <td>{{ r.publisher }}</td>
-            <td>{{ r.language }}</td>
-            <td><a href="{{ b + r.lccn }}" target="_blank">URL</a>,
-                <a href="{{ b + r.lccn[:-1] + '.pdf' }}" target="_blank">PDF</a>,
-                <a href="{{ b + r.lccn + 'ocr.txt' }}" target="_blank">TXT</a></td>
-        </tr>
-        {% endfor %}
+    {% for r in results %}
+    <tr>
+        <td>{{ r.date }}</td>
+        <td>{{ r.newspaper }}</td>
+        <td>{{ r.place }}</td>
+        <td>{{ r.state }}</td>
+        <td>{{ r.publisher }}</td>
+        <td>{{ r.language }}</td>
+        <td><a href="{{ b + r.lccn }}" target="_blank">URL</a>,
+            <a href="{{ b + r.lccn[:-1] + '.pdf' }}" target="_blank">PDF</a>,
+            <a href="{{ b + r.lccn + 'ocr.txt' }}" target="_blank">TXT</a></td>
+    </tr>
+    {% endfor %}
     </tbody>
 </table>
 {% endblock %}
