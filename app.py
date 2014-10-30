@@ -6,6 +6,7 @@ import StringIO
 import csv
 import zipfile
 from datetime import datetime
+from collections import Counter, defaultdict
 
 BASE_URL = 'http://chroniclingamerica.loc.gov'
 SEARCH_URL = '/search/pages/results/'
@@ -163,8 +164,7 @@ def download(search_id):
     for r in results:
         texts.append(BASE_URL + r.lccn + 'ocr.txt')
 
-    response = make_response('<br>'.join(texts))
-    return response
+    return make_response('<br>'.join(texts))
 
 
 @app.route('/metadata/<search_id>/')
@@ -207,6 +207,19 @@ def to_zip(search_id):
     response = make_response(output.getvalue())
     response.headers['Content-Disposition'] = 'attachment;filename=results.zip'
     return response
+
+
+@app.route('/chart/<search_id>/')
+def chart(search_id):
+    """ Returns a line chart for a SavedSearch """
+    ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
+    results = ss.results.order_by(Result.date)
+
+    months = defaultdict(Counter)
+    for result in results:
+        months[result.date.year][result.date.month] += 1
+
+    return render_template('chart.html', saved_search=ss, months=months)
 
 
 @app.route('/results/<search_id>/')
