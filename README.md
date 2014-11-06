@@ -8,9 +8,14 @@ Code
 
 The LoCMiner is written in the [Flask microframework](http://flask.pocoo.org/) with the [SQLAlchemy extension](https://pythonhosted.org/Flask-SQLAlchemy/) for ORM. All requests to the Chronicling America collection are processed using the [Requests: HTTP for Humans](http://docs.python-requests.org/) package. 
 
-(TODO) For a local installation, the following steps should be sufficient:
+For a local installation, the following steps should be sufficient:
 
-Demo 
-==== 
+    git clone https://github.com/UUDigitalHumanitieslab/LoCMiner.git
+    cd LoCMiner
+    pip install -r requirements.txt
+    python app.py
+    
+Demo
+====
 
 (TODO) A demonstrator will soon be set up. 
