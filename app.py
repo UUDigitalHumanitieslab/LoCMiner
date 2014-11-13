@@ -55,6 +55,7 @@ class Result(db.Model):
     state = db.Column(db.String(200))
     publisher = db.Column(db.String(200))
     language = db.Column(db.String(200))
+    frequency = db.Column(db.String(200))
     ocr = db.Column(db.Text)
 
     def __init__(self, saved_search, result):
@@ -66,6 +67,7 @@ class Result(db.Model):
         self.state = self.as_list(result['state'])
         self.publisher = result['publisher']
         self.language = self.as_list(result['language'])
+        self.frequency = result['frequency']
         self.ocr = result['ocr_eng']
 
     def __repr__(self):
@@ -81,7 +83,7 @@ class Result(db.Model):
             'paper_dc_date': self.date.strftime('%Y-%m-%d'),
             'paper_dc_title': self.newspaper,
             'paper_dcterms_spatial': (self.place if self.place else 'unknown'),
-            'paper_dcterms_temporal': 'daily',
+            'paper_dcterms_temporal': self.frequency,
             'article_dc_title': self.ocr[:50],
             'article_dc_subject': 'newspaper',
             'text_content': self.ocr,
@@ -271,24 +273,20 @@ def mine(saved_search, search_term):
     r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
     saved_search.url = r.url
     db.session.add(saved_search)
-    json_result = r.json()
-    total_items = json_result['totalItems']
-    print 'Results found: %d' % (total_items)
+    j = r.json()
+    total_items = j['totalItems']
+    print 'Results found: %d' % total_items
 
     if total_items > MAX_RESULTS:
         print 'Sorry, too many results'
     else:
-        write_result(saved_search, r)
-        end_index = json_result['endIndex']
+        end_index = write_result(saved_search, r)
 
         while end_index < total_items:
-            r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
-            print r.url
-
-            end_index = write_result(saved_search, r)
-
             page += 1
             search_term['page'] = page
+            r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
+            end_index = write_result(saved_search, r)
 
 
 def write_result(s, r):
