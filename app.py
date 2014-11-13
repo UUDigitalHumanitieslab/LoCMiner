@@ -16,7 +16,7 @@ from collections import Counter, defaultdict
 # LoC Settings
 BASE_URL = 'http://chroniclingamerica.loc.gov'
 SEARCH_URL = '/search/pages/results/'
-MAX_RESULTS = 5000
+MAX_RESULTS = 1000
 MIN_CORPUS_DATE = 1836
 MAX_CORPUS_DATE = 1922
 # Elasticsearch settings
@@ -172,9 +172,12 @@ def search():
         search_term['date1'] = request.form['date1']
         search_term['date2'] = request.form['date2']
         search_term['dateFilterType'] = 'yearRange'
-        mine(saved_search, search_term)
 
-        return redirect(url_for('show_results', search_id=saved_search.id))
+        mined = mine(saved_search, search_term)
+        if mined:
+            return redirect(url_for('show_results', search_id=saved_search.id))
+        else:
+            return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f=request.form)
     else:
         return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f={})
 
@@ -303,10 +306,19 @@ def mine(saved_search, search_term):
     db.session.add(saved_search)
     j = r.json()
     total_items = j['totalItems']
-    print 'Results found: %d' % total_items
+    # print 'Results found: %d' % total_items
 
     if total_items > MAX_RESULTS:
-        print 'Sorry, too many results'
+        flash('Sorry, your search yielded {:,} results, which is more than the allowed maximum of {:,} results.'
+              .format(total_items, MAX_RESULTS), 'error')
+        db.session.delete(saved_search)
+        db.session.commit()
+        return False
+    elif total_items == 0:
+        flash('Sorry, your search yielded no results.', 'error')
+        db.session.delete(saved_search)
+        db.session.commit()
+        return False
     else:
         end_index = write_result(saved_search, r)
 
@@ -315,6 +327,7 @@ def mine(saved_search, search_term):
             search_term['page'] = page
             r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
             end_index = write_result(saved_search, r)
+        return True
 
 
 def write_result(s, r):
