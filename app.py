@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, make_response, flash, Response
+from flask import Flask, request, render_template, redirect, url_for, make_response, flash, Response, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 import requests
 import os
@@ -71,6 +71,20 @@ class Result(db.Model):
 
     def __str__(self):
         return 'Result (%s)' % self.lccn
+
+    @property
+    def serialize(self):
+        """Returns a Result in a serializable format"""
+        return {
+            'paper_dc_date': self.date.strftime('%Y-%m-%d'),
+            'paper_dc_title': self.newspaper,
+            'paper_dcterms_spatial': (self.place if self.place else 'unknown'),
+            'paper_dcterms_temporal': 'daily',
+            'article_dc_title': self.ocr[:50],
+            'article_dc_subject': 'newspaper',
+            'text_content': self.ocr,
+            'identifier': self.lccn
+        }
 
     @staticmethod
     def as_date(d):
@@ -228,6 +242,13 @@ def show_results(search_id):
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
     r = ss.results.all()
     return render_template('show_results.html', saved_search=ss, results=r, b=BASE_URL)
+
+
+@app.route('/_json/<result_id>/')
+def json_results(result_id):
+    """ Returns a Result in JSON format. """
+    result = Result.query.filter_by(id=result_id).first_or_404()
+    return jsonify(result.serialize)
 
 
 def mine(saved_search, search_term):
