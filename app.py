@@ -9,12 +9,21 @@ from pyelasticsearch import ElasticSearch
 from datetime import datetime
 from collections import Counter, defaultdict
 
+# ####
+# Configuration
+# ####
+
+# LoC Settings
 BASE_URL = 'http://chroniclingamerica.loc.gov'
 SEARCH_URL = '/search/pages/results/'
 MAX_RESULTS = 5000
 MIN_CORPUS_DATE = 1836
 MAX_CORPUS_DATE = 1922
-
+# Elasticsearch settings
+ES_CLUSTER = 'http://localhost:9200/'
+ES_INDEX = 'kb'
+ES_TYPE = 'doc'
+# App configuration
 app = Flask(__name__)
 app.config.update(dict(
     SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.root_path, 'p.db'),
@@ -22,7 +31,7 @@ app.config.update(dict(
     SECRET_KEY='development key',
 ))
 db = SQLAlchemy(app)
-es = ElasticSearch('http://localhost:9200/')
+es = ElasticSearch(ES_CLUSTER)
 
 # ####
 # Models
@@ -254,7 +263,7 @@ def index(search_id):
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
     results = ss.results.all()
     for r in results:
-        es.index('kb', 'doc', r.serialize)
+        es.index(ES_INDEX, ES_TYPE, r.serialize)
     flash('Successfully indexed!', 'success')
     return show_results(search_id)
 
