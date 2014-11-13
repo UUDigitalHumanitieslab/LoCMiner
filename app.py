@@ -5,6 +5,7 @@ import os
 import StringIO
 import csv
 import zipfile
+from pyelasticsearch import ElasticSearch
 from datetime import datetime
 from collections import Counter, defaultdict
 
@@ -21,6 +22,7 @@ app.config.update(dict(
     SECRET_KEY='development key',
 ))
 db = SQLAlchemy(app)
+es = ElasticSearch('http://localhost:9200/')
 
 # ####
 # Models
@@ -244,8 +246,19 @@ def show_results(search_id):
     return render_template('show_results.html', saved_search=ss, results=r, b=BASE_URL)
 
 
+@app.route('/index/<search_id>/')
+def index(search_id):
+    """ Indexes the given search """
+    ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
+    results = ss.results.all()
+    for r in results:
+        es.index('kb', 'doc', r.serialize)
+    flash('Successfully indexed!', 'success')
+    return render_template('show_results.html', saved_search=ss, results=results, b=BASE_URL)
+
+
 @app.route('/_json/<result_id>/')
-def json_results(result_id):
+def json_result(result_id):
     """ Returns a Result in JSON format. """
     result = Result.query.filter_by(id=result_id).first_or_404()
     return jsonify(result.serialize)

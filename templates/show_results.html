@@ -24,6 +24,9 @@
     <li>
         You can download a .zip-file of all the OCR-files here <a href="{{ url_for('to_zip', search_id=saved_search.id) }}">here</a>.
     </li>
+    <li>
+        You can index your results for analysis with Texcavator <a href="{{ url_for('index', search_id=saved_search.id) }}">here</a>.
+    </li>
 </ul>
 <table id="results" class="display" cellspacing="0" width="100%">
     <thead>
@@ -48,7 +51,8 @@
         <td>{{ r.language }}</td>
         <td><a href="{{ b + r.lccn }}" target="_blank">URL</a>,
             <a href="{{ b + r.lccn[:-1] + '.pdf' }}" target="_blank">PDF</a>,
-            <a href="{{ b + r.lccn + 'ocr.txt' }}" target="_blank">TXT</a></td>
+            <a href="{{ b + r.lccn + 'ocr.txt' }}" target="_blank">TXT</a>,
+            <a href="{{ url_for('json_result', result_id=r.id) }}">JSON</a></td>
     </tr>
     {% endfor %}
     </tbody>
