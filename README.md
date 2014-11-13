@@ -1,13 +1,11 @@
-LoCMiner
-========
+# LoCMiner
 
 The LoCMiner is a simple web application that allows users to search the 
 [Chronicling America collection](http://chroniclingamerica.loc.gov/) of the 
 [Library of Congress](http://www.loc.gov/) and then easily export their data 
 to text mining tools of their choice.
 
-Back-end
-====
+## Back-end
 
 The LoCMiner is written in the [Flask microframework](http://flask.pocoo.org/) 
 with the [SQLAlchemy extension](https://pythonhosted.org/Flask-SQLAlchemy/) for ORM. 
@@ -30,8 +28,7 @@ To create the (empty) database:
     >>> db.create_all()
     >>> exit()
 
-Front-end
-====
+## Front-end
 
 On the front-end the [PureCSS](http://purecss.io/) package is used primarily for the lay-out. 
 The following JavaScript libraries are employed:
@@ -40,7 +37,6 @@ The following JavaScript libraries are employed:
 - [DataTables](http://datatables.net/)
 - [HighCharts](http://www.highcharts.com/)
 
-Demo
-====
+## Demo
 
 (TODO) A demonstrator will soon be set up. 
