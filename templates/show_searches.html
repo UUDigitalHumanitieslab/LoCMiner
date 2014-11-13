@@ -20,12 +20,8 @@
         <tr>
             <td>{{ ss.name }}</td>
             <td><a href="{{ ss.url }}" target="_blank">URL</a></td>
-            {% if ss.results.all() %}
-                <td><a href="{{ url_for('show_results', search_id=ss.id) }}">Show results</a>,
-                    <a href="{{ url_for('delete_search', search_id=ss.id) }}">Delete</a></td>
-            {% else %}
-                <td><a href="{{ url_for('delete_search', search_id=ss.id) }}">Delete</a></td>
-            {% endif %}
+            <td><a href="{{ url_for('show_results', search_id=ss.id) }}">Show results</a>,
+                <a href="{{ url_for('delete_search', search_id=ss.id) }}">Delete</a></td>
         </tr>
         {% endfor %}
     </tbody>

@@ -254,7 +254,7 @@ def index(search_id):
     for r in results:
         es.index('kb', 'doc', r.serialize)
     flash('Successfully indexed!', 'success')
-    return render_template('show_results.html', saved_search=ss, results=results, b=BASE_URL)
+    return show_results(search_id)
 
 
 @app.route('/_json/<result_id>/')
