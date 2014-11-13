@@ -138,13 +138,27 @@ def search():
         - searches the LOC and renders the result view if correct
     """
     if request.method == 'POST':
+        # Start validation
+        error = False
         search_name = request.form['name'].lower()
-
         s = SavedSearch.query.filter_by(name=search_name).first()
         if s:
             flash('Search name already in use', 'error')
-            return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE)
+            error = True
 
+        if request.form['date1'] > request.form['date2']:
+            flash('Second date before first date', 'error')
+            error = True
+
+        if not (request.form['ortext'] or request.form['andtext'] or request.form['phrasetext']):
+            flash('No search term given', 'error')
+            error = True
+
+        # If there are problems, return to the search page
+        if error:
+            return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f=request.form)
+
+        # No errors, start mining
         saved_search = SavedSearch(search_name)
         db.session.add(saved_search)
         db.session.commit()
@@ -162,7 +176,7 @@ def search():
 
         return redirect(url_for('show_results', search_id=saved_search.id))
     else:
-        return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE)
+        return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f={})
 
 
 @app.route('/searches/')
@@ -273,6 +287,11 @@ def json_result(result_id):
     """ Returns a Result in JSON format. """
     result = Result.query.filter_by(id=result_id).first_or_404()
     return jsonify(result.serialize)
+
+
+# ####
+# Helpers
+# ####
 
 
 def mine(saved_search, search_term):
