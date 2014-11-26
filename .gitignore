@@ -1,8 +1,8 @@
 # Byte-compiled / optimized / DLL files
 *.py[cod]
 
-# SQL lite database
-p.db
+# SQL lite databases
+*.db
 
 # IDE
 .idea
