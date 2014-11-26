@@ -26,7 +26,7 @@ ES_TYPE = 'doc'
 # App configuration
 app = Flask(__name__)
 app.config.update(dict(
-    SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.root_path, 'p.db'),
+    SQLALCHEMY_DATABASE_URI='postgresql://loc:locminer@localhost:5432/loc',
     DEBUG=True,
     SECRET_KEY='development key',
 ))
