@@ -1,17 +1,29 @@
 from flask import Flask, request, render_template, redirect, url_for, make_response, flash, Response, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
 import requests
-import os
 import StringIO
 import csv
 import zipfile
 from pyelasticsearch import ElasticSearch
+from celery import Celery
 from datetime import datetime
 from collections import Counter, defaultdict
 
 # ####
 # Configuration
 # ####
+
+def make_celery(app):
+    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
+    celery.conf.update(app.config)
+    TaskBase = celery.Task
+    class ContextTask(TaskBase):
+        abstract = True
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+    celery.Task = ContextTask
+    return celery
 
 # LoC Settings
 BASE_URL = 'http://chroniclingamerica.loc.gov'
@@ -27,11 +39,15 @@ ES_TYPE = 'doc'
 app = Flask(__name__)
 app.config.update(dict(
     SQLALCHEMY_DATABASE_URI='postgresql://loc:locminer@localhost:5432/loc',
+    CELERY_BROKER_URL='redis://localhost:6379',
+    CELERY_RESULT_BACKEND='redis://localhost:6379',
     DEBUG=True,
     SECRET_KEY='development key',
 ))
 db = SQLAlchemy(app)
 es = ElasticSearch(ES_CLUSTER)
+celery = make_celery(app)
+
 
 # ####
 # Models
@@ -296,14 +312,13 @@ def json_result(result_id):
 # Helpers
 # ####
 
-
 def mine(saved_search, search_term):
     """ Mines the LOC given the search term, saves the Results to the SavedSearch. """
-    page = 1
-
     r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
     saved_search.url = r.url
     db.session.add(saved_search)
+    db.session.commit()
+
     j = r.json()
     total_items = j['totalItems']
     # print 'Results found: %d' % total_items
@@ -320,18 +335,29 @@ def mine(saved_search, search_term):
         db.session.commit()
         return False
     else:
-        end_index = write_result(saved_search, r)
-
-        while end_index < total_items:
-            page += 1
-            search_term['page'] = page
-            r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
-            end_index = write_result(saved_search, r)
+        # Retrieve the results as a background task
+        res = write_results.delay(saved_search.id, search_term, total_items)
+        print res.id
         return True
 
 
-def write_result(s, r):
+@celery.task(name='tasks.write')
+def write_results(search_id, search_term, total_items):
+    """ Writes all Results to the database. """
+    r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
+    end_index = write_result(search_id, r)
+
+    page = 1
+    while end_index < total_items:
+        page += 1
+        search_term['page'] = page
+        r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
+        end_index = write_result(search_id, r)
+
+
+def write_result(search_id, r):
     """ Writes a single Result to the database. """
+    s = SavedSearch.query.filter_by(id=search_id).first_or_404()
     j = r.json()
     for item in j['items']:
         result = Result(s, item)
@@ -345,4 +371,3 @@ def write_result(s, r):
 
 if __name__ == '__main__':
     app.run()
-
