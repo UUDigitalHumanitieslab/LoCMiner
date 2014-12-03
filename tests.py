@@ -1,16 +1,20 @@
-from app import app, db
 import unittest
 import os
+
+from LoCMiner.factories import create_app
 
 
 class AppTestCase(unittest.TestCase):
     def setUp(self):
+        app = create_app(dict(
+            SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(os.getcwd(), 'test.db'),
+            SECRET_KEY='development key',
+        ))
         self.app = app.test_client()
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.root_path, 'test.db')
-        db.create_all()
+        #db.create_all()
 
     def tearDown(self):
-        db.drop_all()
+        pass
 
     def test_home(self):
         rv = self.app.get('/')

@@ -19,14 +19,7 @@ For a local installation, the following steps should be sufficient:
     > git clone https://github.com/UUDigitalHumanitieslab/LoCMiner.git
     > cd LoCMiner
     > pip install -r requirements.txt
-    > python app.py
-    
-To create the (empty) database: 
-    
-    > python 
-    >>> from app import db
-    >>> db.create_all()
-    >>> exit()
+    > python run.py
 
 ## Front-end
 

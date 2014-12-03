@@ -1,29 +1,16 @@
-from flask import Flask, request, render_template, redirect, url_for, make_response, flash, Response, jsonify
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask import Blueprint, request, render_template, \
+    redirect, url_for, make_response, flash, Response, jsonify
+from pyelasticsearch import ElasticSearch
+from collections import Counter, defaultdict
 import requests
 import StringIO
 import csv
 import zipfile
-from pyelasticsearch import ElasticSearch
-from celery import Celery
-from datetime import datetime
-from collections import Counter, defaultdict
 
-# ####
-# Configuration
-# ####
+from .factories import db
+from .models import SavedSearch, Result
 
-def make_celery(app):
-    celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
-    celery.conf.update(app.config)
-    TaskBase = celery.Task
-    class ContextTask(TaskBase):
-        abstract = True
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
-    celery.Task = ContextTask
-    return celery
+site = Blueprint('site', __name__)
 
 # LoC Settings
 BASE_URL = 'http://chroniclingamerica.loc.gov'
@@ -31,121 +18,20 @@ SEARCH_URL = '/search/pages/results/'
 MAX_RESULTS = 1000
 MIN_CORPUS_DATE = 1836
 MAX_CORPUS_DATE = 1922
-# Elasticsearch settings
+# ElasticSearch settings
 ES_CLUSTER = 'http://localhost:9200/'
 ES_INDEX = 'kb'
 ES_TYPE = 'doc'
-# App configuration
-app = Flask(__name__)
-app.config.update(dict(
-    SQLALCHEMY_DATABASE_URI='postgresql://loc:locminer@localhost:5432/loc',
-    CELERY_BROKER_URL='redis://localhost:6379',
-    CELERY_RESULT_BACKEND='redis://localhost:6379',
-    DEBUG=True,
-    SECRET_KEY='development key',
-))
-db = SQLAlchemy(app)
 es = ElasticSearch(ES_CLUSTER)
-celery = make_celery(app)
 
 
-# ####
-# Models
-# ####
-
-
-class SavedSearch(db.Model):
-    """A SavedSearch is a search started by a user. """
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), unique=True)
-    url = db.Column(db.String(200))
-
-    def __init__(self, name):
-        self.name = name
-
-    def __repr__(self):
-        return '<SavedSearch %r>' % self.name
-
-
-class Result(db.Model):
-    """A Result is a result line of a SavedSearch. """
-    id = db.Column(db.Integer, primary_key=True)
-    saved_search_id = db.Column(db.Integer, db.ForeignKey('saved_search.id'))
-    saved_search = db.relationship('SavedSearch', foreign_keys='Result.saved_search_id',
-                                   backref=db.backref('results', lazy='dynamic'))
-    lccn = db.Column(db.String(200))
-    date = db.Column(db.Date())
-    newspaper = db.Column(db.String(200))
-    place = db.Column(db.String(200))
-    state = db.Column(db.String(200))
-    publisher = db.Column(db.String(200))
-    language = db.Column(db.String(200))
-    frequency = db.Column(db.String(200))
-    ocr = db.Column(db.Text)
-
-    def __init__(self, saved_search, result):
-        self.saved_search = saved_search
-        self.lccn = result['id']
-        self.date = self.as_date(result['date'])
-        self.newspaper = result['title']
-        self.place = self.as_list(result['county'])
-        self.state = self.as_list(result['state'])
-        self.publisher = result['publisher']
-        self.language = self.as_list(result['language'])
-        self.frequency = result['frequency']
-        self.ocr = result['ocr_eng']
-
-    def __repr__(self):
-        return '<Result %r>' % self.id
-
-    def __str__(self):
-        return 'Result (%s)' % self.lccn
-
-    @property
-    def serialize(self):
-        """Returns a Result in a serializable format"""
-        return {
-            'paper_dc_date': self.date.strftime('%Y-%m-%d'),
-            'paper_dc_title': self.newspaper,
-            'paper_dcterms_spatial': (self.place if self.place else 'unknown'),
-            'paper_dcterms_temporal': self.frequency,
-            'article_dc_title': self.ocr[:50],
-            'article_dc_subject': 'newspaper',
-            'text_content': self.ocr,
-            'identifier': self.lccn
-        }
-
-    @staticmethod
-    def as_date(d):
-        """Converts a LOC date to a Python datetime object. """
-        try:
-            result = datetime.strptime(d, '%Y%m%d')
-        except ValueError:
-            # print '%s-%s-%s' % (d[:4], d[4:6], d[6:])
-            result = None
-        return result
-
-    @staticmethod
-    def as_list(l):
-        """Converts a LOC list to a string separated by commas. """
-        if any(v is None for v in l):
-            return None
-        else:
-            return ','.join(l)
-
-
-# ####
-# Routes
-# ####
-
-
-@app.route('/')
+@site.route('/')
 def home():
     """Renders the home view. """
     return render_template('home.html')
 
 
-@app.route('/search/', methods=['GET', 'POST'])
+@site.route('/search/', methods=['GET', 'POST'])
 def search():
     """
     On GET: renders the search view
@@ -172,7 +58,10 @@ def search():
 
         # If there are problems, return to the search page
         if error:
-            return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f=request.form)
+            return render_template('search.html',
+                                   date_from=MIN_CORPUS_DATE,
+                                   date_to=MAX_CORPUS_DATE,
+                                   f=request.form)
 
         # No errors, start mining
         saved_search = SavedSearch(search_name)
@@ -191,20 +80,26 @@ def search():
 
         mined = mine(saved_search, search_term)
         if mined:
-            return redirect(url_for('show_results', search_id=saved_search.id))
+            return redirect(url_for('.show_results', search_id=saved_search.id))
         else:
-            return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f=request.form)
+            return render_template('search.html',
+                                   date_from=MIN_CORPUS_DATE,
+                                   date_to=MAX_CORPUS_DATE,
+                                   f=request.form)
     else:
-        return render_template('search.html', date_from=MIN_CORPUS_DATE, date_to=MAX_CORPUS_DATE, f={})
+        return render_template('search.html',
+                               date_from=MIN_CORPUS_DATE,
+                               date_to=MAX_CORPUS_DATE,
+                               f={})
 
 
-@app.route('/searches/')
+@site.route('/searches/')
 def show_searches():
     """Shows all completed SavedSearches. """
     return render_template('show_searches.html', saved_searches=SavedSearch.query.all())
 
 
-@app.route('/delete/<search_id>/')
+@site.route('/delete/<search_id>/')
 def delete_search(search_id):
     """Deletes a SavedSearch from the database. """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -214,7 +109,7 @@ def delete_search(search_id):
     return render_template('show_searches.html', saved_searches=SavedSearch.query.all())
 
 
-@app.route('/download/<search_id>/')
+@site.route('/download/<search_id>/')
 def download(search_id):
     """ Returns a list of all OCR Results for a SavedSearch. """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -227,7 +122,7 @@ def download(search_id):
     return make_response('<br>'.join(texts))
 
 
-@app.route('/metadata/<search_id>/')
+@site.route('/metadata/<search_id>/')
 def metadata(search_id):
     """ Returns a .csv-file of all Results Metadata for a SavedSearch """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -250,7 +145,7 @@ def metadata(search_id):
                     headers={'Content-Disposition': 'attachment;filename=metadata.csv'})
 
 
-@app.route('/zip/<search_id>/')
+@site.route('/zip/<search_id>/')
 def to_zip(search_id):
     """ Returns a .zip-file of all OCR Results for a SavedSearch """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -269,7 +164,7 @@ def to_zip(search_id):
     return response
 
 
-@app.route('/chart/<search_id>/')
+@site.route('/chart/<search_id>/')
 def chart(search_id):
     """ Returns a line chart for a SavedSearch """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -282,7 +177,7 @@ def chart(search_id):
     return render_template('chart.html', saved_search=ss, months=months)
 
 
-@app.route('/results/<search_id>/')
+@site.route('/results/<search_id>/')
 def show_results(search_id):
     """ Shows all Results for a SavedSearch. """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -290,7 +185,7 @@ def show_results(search_id):
     return render_template('show_results.html', saved_search=ss, results=r, b=BASE_URL)
 
 
-@app.route('/index/<search_id>/')
+@site.route('/index/<search_id>/')
 def index(search_id):
     """ Indexes the given search """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
@@ -301,7 +196,7 @@ def index(search_id):
     return show_results(search_id)
 
 
-@app.route('/_json/<result_id>/')
+@site.route('/_json/<result_id>/')
 def json_result(result_id):
     """ Returns a Result in JSON format. """
     result = Result.query.filter_by(id=result_id).first_or_404()
@@ -336,38 +231,7 @@ def mine(saved_search, search_term):
         return False
     else:
         # Retrieve the results as a background task
+        from .tasks import write_results
         res = write_results.delay(saved_search.id, search_term, total_items)
-        print res.id
+        # print res.id
         return True
-
-
-@celery.task(name='tasks.write')
-def write_results(search_id, search_term, total_items):
-    """ Writes all Results to the database. """
-    r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
-    end_index = write_result(search_id, r)
-
-    page = 1
-    while end_index < total_items:
-        page += 1
-        search_term['page'] = page
-        r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
-        end_index = write_result(search_id, r)
-
-
-def write_result(search_id, r):
-    """ Writes a single Result to the database. """
-    s = SavedSearch.query.filter_by(id=search_id).first_or_404()
-    j = r.json()
-    for item in j['items']:
-        result = Result(s, item)
-        db.session.add(result)
-    db.session.commit()
-    return j['endIndex']
-
-# ####
-# Main
-# ####
-
-if __name__ == '__main__':
-    app.run()
