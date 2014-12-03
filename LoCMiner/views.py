@@ -2,6 +2,8 @@ from flask import Blueprint, request, render_template, \
     redirect, url_for, make_response, flash, Response, jsonify
 from pyelasticsearch import ElasticSearch
 from collections import Counter, defaultdict
+from celery.result import AsyncResult
+from math import ceil
 import requests
 import StringIO
 import csv
@@ -185,6 +187,19 @@ def show_results(search_id):
     return render_template('show_results.html', saved_search=ss, results=r, b=BASE_URL)
 
 
+@site.route('/state/<search_id>/')
+def state(search_id):
+    """ Returns the (Celery) state of a SavedSearch. """
+    ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
+    res = AsyncResult(ss.task_id)
+    if res.status == 'PROGRESS':
+        percentage = ceil(res.info['current'] / float(res.info['total']) * 100)
+        return jsonify(result=percentage)
+    else:
+        value = 100 if res.status == 'SUCCESS' else 0
+        return jsonify(result=value)
+
+
 @site.route('/index/<search_id>/')
 def index(search_id):
     """ Indexes the given search """
@@ -210,9 +225,6 @@ def json_result(result_id):
 def mine(saved_search, search_term):
     """ Mines the LOC given the search term, saves the Results to the SavedSearch. """
     r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
-    saved_search.url = r.url
-    db.session.add(saved_search)
-    db.session.commit()
 
     j = r.json()
     total_items = j['totalItems']
@@ -233,5 +245,11 @@ def mine(saved_search, search_term):
         # Retrieve the results as a background task
         from .tasks import write_results
         res = write_results.delay(saved_search.id, search_term, total_items)
-        # print res.id
+
+        saved_search.url = r.url
+        saved_search.task_id = res.id
+
+        db.session.add(saved_search)
+        db.session.commit()
+
         return True

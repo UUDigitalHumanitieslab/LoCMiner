@@ -5,10 +5,45 @@
 <script>
     $(document).ready(function() {
         $('#results').DataTable();
+
+        $('#progressbar').progressbar({
+            value: false,
+            change: function() {
+                $('.progress-label').text($('#progressbar').progressbar('value') + '%');
+            },
+            complete: function() {
+                $('.progress-label').text('Completed, refresh to see results!');
+            }
+        });
+
+        doPoll();
     });
+
+    function doPoll()
+    {
+        $.get('{{ url_for('.state', search_id=saved_search.id) }}', function (data)
+        {
+            // Get the return value and set that in the progress bar
+            $('#progressbar').progressbar('value', data.result);
+            if (data.result === 100)
+            {
+                // Parsing completed! :)
+                isDone = true;
+            }
+            else
+            {
+                // Re-poll after two seconds
+                setTimeout(doPoll, 2000);
+            }
+        });
+    }
 
 
 </script>
+<div id="progress">
+<h3>Progress</h3>
+<div id="progressbar"><div class="progress-label">Pending...</div></div>
+</div>
 <p>This search yielded {{ results | count }} results.</p>
 <h3>Analysis</h3>
 <ul>

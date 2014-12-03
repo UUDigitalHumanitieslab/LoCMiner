@@ -1,3 +1,9 @@
+/* Margin below */
+.footer {
+    margin-bottom: 50px;
+}
+
+/* Contextual backgrounds */
 .success {
     background-color: #dff0d8;
     padding: 15px;
@@ -8,11 +14,21 @@
     padding: 15px;
 }
 
+/* HighCharts */
 #year_chart {
     width: 100%;
     height: 400px;
 }
 
-.footer {
-    margin-bottom: 50px;
+/* jQueryUI progress bar */
+.ui-progressbar {
+    position: relative;
+}
+
+.progress-label {
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #fff;
 }
