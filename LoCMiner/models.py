@@ -9,6 +9,7 @@ class SavedSearch(db.Model):
     name = db.Column(db.String(200), unique=True)
     url = db.Column(db.String(200))
     task_id = db.Column(db.String(200))
+    task_status = db.Column(db.String(200))
 
     def __init__(self, name):
         self.name = name

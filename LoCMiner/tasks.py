@@ -16,7 +16,6 @@ IN_PROGRESS = 'PROGRESS'
 @celery.task(name='tasks.write_results')
 def write_results(search_id, search_term, total_items):
     """ Writes all Results to the database. """
-
     r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
     end_index = write_result(search_id, r)
 

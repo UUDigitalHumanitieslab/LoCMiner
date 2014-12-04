@@ -192,12 +192,19 @@ def state(search_id):
     """ Returns the (Celery) state of a SavedSearch. """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
     res = AsyncResult(ss.task_id)
+
+    if ss.task_status != res.status:
+        ss.task_status = res.status
+        db.session.add(ss)
+        db.session.commit()
+
+    percentage = 0
     if res.status == 'PROGRESS':
         percentage = ceil(res.info['current'] / float(res.info['total']) * 100)
-        return jsonify(result=percentage)
-    else:
-        value = 100 if res.status == 'SUCCESS' else 0
-        return jsonify(result=value)
+    elif res.status == 'SUCCESS':
+        percentage = 100
+
+    return jsonify(result=percentage)
 
 
 @site.route('/index/<search_id>/')
@@ -248,6 +255,7 @@ def mine(saved_search, search_term):
 
         saved_search.url = r.url
         saved_search.task_id = res.id
+        saved_search.task_status = res.status
 
         db.session.add(saved_search)
         db.session.commit()
