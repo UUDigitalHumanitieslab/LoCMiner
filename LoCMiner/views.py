@@ -1,5 +1,5 @@
 from flask import Blueprint, request, render_template, \
-    redirect, url_for, make_response, flash, Response, jsonify
+    redirect, url_for, flash, Response, jsonify
 from pyelasticsearch import ElasticSearch
 from collections import Counter, defaultdict
 from celery.result import AsyncResult
@@ -121,7 +121,7 @@ def download(search_id):
     for r in results:
         texts.append(BASE_URL + r.lccn + 'ocr.txt')
 
-    return make_response('<br>'.join(texts))
+    return Response('<br>'.join(texts))
 
 
 @site.route('/metadata/<search_id>/')
@@ -161,9 +161,8 @@ def to_zip(search_id):
         zf.writestr(result.lccn[1:-1].replace('/', '|') + '.txt', text.getvalue())
     zf.close()
 
-    response = make_response(output.getvalue())
-    response.headers['Content-Disposition'] = 'attachment;filename=results.zip'
-    return response
+    return Response(output.getvalue(),
+                    headers={'Content-Disposition': 'attachment;filename=results.zip'})
 
 
 @site.route('/chart/<search_id>/')
@@ -207,15 +206,26 @@ def state(search_id):
     return jsonify(result=percentage)
 
 
+# ####
+# Elasticsearch
+# ####
+
+
 @site.route('/index/<search_id>/')
 def index(search_id):
-    """ Indexes the given search """
+    """ Bulk indexes the given SavedSearch """
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
-    results = ss.results.all()
-    for r in results:
-        es.index(ES_INDEX, ES_TYPE, r.serialize)
+    es.bulk_index(ES_INDEX, ES_TYPE, [r.serialize for r in ss.results.all()])
     flash('Successfully indexed!', 'success')
     return show_results(search_id)
+
+
+@site.route('/delete_index/')
+def delete_index():
+    """ Deletes all documents from the Elasticsearch index """
+    es.delete_all(ES_INDEX, ES_TYPE)
+    flash('Index successfully deleted', 'success')
+    return home()
 
 
 @site.route('/_json/<result_id>/')
