@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Show a Saved Search{% endblock %}
 {% block header %}Saved Search <em>{{ saved_search.name }}</em>{% endblock %}
+{% set active_page = 'searches' %}
 {% block content %}
 <script>
     $(document).ready(function() {
@@ -49,13 +50,13 @@
 
 </script>
 <div id="progress">
-    <h3>Progress</h3>
+    <h3 class="content-subhead">Progress</h3>
     <p>Your query is currently processing in the background. You can safely navigate away from this page.</p>
     <div id="progressbar"><div class="progress-label">Pending...</div></div>
 </div>
 <div id="results">
     <p>Your query yielded {{ results | count }} results.</p>
-    <h3>Analysis</h3>
+    <h3 class="content-subhead">Analysis</h3>
     <ul>
         <li>
             You can view a time chart of the results <a href="{{ url_for('.chart', search_id=saved_search.id) }}">here</a>.
@@ -70,7 +71,7 @@
             input there.
         </li>
     </ul>
-    <h3>Export</h3>
+    <h3 class="content-subhead">Export</h3>
     <ul>
         <li>
             You can download the metadata of the search results <a
@@ -81,7 +82,7 @@
                 href="{{ url_for('.to_zip', search_id=saved_search.id) }}">here</a>.
         </li>
     </ul>
-    <h3>Results</h3>
+    <h3 class="content-subhead">Results</h3>
     <table id="results_table" class="display" cellspacing="0" width="100%">
         <thead>
         <tr>

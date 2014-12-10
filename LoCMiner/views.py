@@ -33,6 +33,12 @@ def home():
     return render_template('home.html')
 
 
+@site.route('/about/')
+def about():
+    """Renders the about view. """
+    return render_template('about.html')
+
+
 @site.route('/search/', methods=['GET', 'POST'])
 def search():
     """
