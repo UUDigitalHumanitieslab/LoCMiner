@@ -3,11 +3,12 @@ from celery import Celery
 
 from .extensions import db
 from .views import site
+from .config import DevelopmentConfig
 
 
 def create_app(config):
     app = Flask(__name__)
-    app.config.update(config)
+    app.config.from_object(config)
 
     db.init_app(app)
     db.create_all(app=app)  # pass app because of Flask-SQLAlchemy contexts
@@ -18,12 +19,7 @@ def create_app(config):
 
 
 def create_celery(app=None):
-    app = app or create_app(dict(
-        SQLALCHEMY_DATABASE_URI='postgresql://loc:locminer@localhost:5432/loc',
-        CELERY_BROKER_URL='redis://localhost:6379',
-        CELERY_RESULT_BACKEND='redis://localhost:6379',
-        SECRET_KEY='development key',
-    ))
+    app = app or create_app(DevelopmentConfig)
     celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
     celery.conf.update(app.config)
     TaskBase = celery.Task

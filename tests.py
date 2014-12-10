@@ -6,12 +6,8 @@ from LoCMiner.factories import create_app
 
 class AppTestCase(unittest.TestCase):
     def setUp(self):
-        app = create_app(dict(
-            SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(os.getcwd(), 'test.db'),
-            SECRET_KEY='development key',
-        ))
+        app = create_app('LoCMiner.config.TestConfig')
         self.app = app.test_client()
-        #db.create_all()
 
     def tearDown(self):
         pass
