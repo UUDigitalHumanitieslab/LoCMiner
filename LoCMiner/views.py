@@ -113,8 +113,8 @@ def delete_search(search_id):
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
     db.session.delete(ss)
     db.session.commit()
-    flash('Search successfully deleted', 'success')
-    return render_template('show_searches.html', saved_searches=SavedSearch.query.all())
+    flash('Search <em>{}</em> successfully deleted'.format(ss.name), 'success')
+    return redirect(url_for('.show_searches'))
 
 
 @site.route('/download/<search_id>/')

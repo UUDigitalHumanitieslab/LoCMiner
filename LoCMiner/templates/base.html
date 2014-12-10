@@ -53,17 +53,19 @@
             <h2>{% block header %}{% endblock %}</h2>
         </div>
 
+        <div class="content">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="flash">
             {% for category, message in messages %}
-            <p class="{{ category }}">{{ message }}</p>
+            <p class="{{ category }}">{{ message | safe }}</p>
             {% endfor %}
         </div>
         {% endif %}
         {% endwith %}
 
-        <div class="content">{% block content %}{% endblock %}</div>
+        {% block content %}{% endblock %}
+        </div>
     </div>
 </div>
 <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='ui.js') }}"></script>
