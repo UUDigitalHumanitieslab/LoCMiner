@@ -217,7 +217,7 @@ def index(search_id):
     ss = SavedSearch.query.filter_by(id=search_id).first_or_404()
     es.bulk_index(ES_INDEX, ES_TYPE, [r.serialize for r in ss.results.all()])
     flash('Successfully indexed!', 'success')
-    return show_results(search_id)
+    return redirect(url_for('.show_results', search_id=ss.id))
 
 
 @site.route('/delete_index/')
@@ -225,7 +225,7 @@ def delete_index():
     """ Deletes all documents from the Elasticsearch index """
     es.delete_all(ES_INDEX, ES_TYPE)
     flash('Index successfully deleted', 'success')
-    return home()
+    return redirect(url_for('.home'))
 
 
 @site.route('/_json/<result_id>/')
