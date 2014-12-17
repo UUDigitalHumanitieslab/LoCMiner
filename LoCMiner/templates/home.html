@@ -4,7 +4,8 @@
 {% set active_page = 'home' %}
 {% block content %}
 <p>
-    <em>LoCMiner</em> is a simple application for extracting text from the Library of Congress database.
+    <em>LoCMiner</em> is a simple application for extracting text from the Library of Congress
+    <a href="http://chroniclingamerica.loc.gov/" target="_blank">Chronicling America</a> database.
 </p>
 <p>
     Start <a href="{{ url_for('.search') }}">searching</a> or browse the <a href="{{ url_for('.show_searches') }}">completed searches</a>.

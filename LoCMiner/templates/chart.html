@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Chart{% endblock %}
-{% block header %}Chart{% endblock %}
+{% block title %}Time chart{% endblock %}
+{% block header %}Time chart{% endblock %}
 {% set active_page = 'searches' %}
 {% block content %}
 <div id="year_chart"></div>
@@ -65,6 +65,6 @@ $(function () {
 
 </script>
 <p>
-    <a href="{{ url_for('.show_results', search_id=saved_search.id) }}">Back</a>
+    <a href="{{ url_for('.show_results', search_id=saved_search.id) }}" class="pure-button">Back</a>
 </p>
 {% endblock %}
