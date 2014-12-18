@@ -60,7 +60,7 @@ class Result(db.Model):
             'paper_dc_title': self.newspaper,
             'paper_dcterms_spatial': (self.place if self.place else 'unknown'),
             'paper_dcterms_temporal': self.frequency,
-            'article_dc_title': self.ocr[:50],
+            'article_dc_title': self.newspaper,
             'article_dc_subject': 'newspaper',
             'text_content': self.ocr,
             'identifier': self.lccn
