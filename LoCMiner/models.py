@@ -7,7 +7,7 @@ class SavedSearch(db.Model):
     """A SavedSearch is a search started by a user. """
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), unique=True)
-    url = db.Column(db.String(200))
+    url = db.Column(db.String(500))
     task_id = db.Column(db.String(200))
     task_status = db.Column(db.String(200))
 
@@ -56,7 +56,7 @@ class Result(db.Model):
     def serialize(self):
         """Returns a Result in a serializable format"""
         return {
-            'paper_dc_date': self.date.strftime('%Y-%m-%d'),
+            'paper_dc_date': self.date.isoformat().strip().split("T")[0], # strftime does not work for pre-1900 dates
             'paper_dc_title': self.newspaper,
             'paper_dcterms_spatial': (self.place if self.place else 'unknown'),
             'paper_dcterms_temporal': self.frequency,

@@ -17,7 +17,7 @@ site = Blueprint('site', __name__)
 # LoC Settings
 BASE_URL = 'http://chroniclingamerica.loc.gov'
 SEARCH_URL = '/search/pages/results/'
-MAX_RESULTS = 1000
+MAX_RESULTS = 2500
 MIN_CORPUS_DATE = 1836
 MAX_CORPUS_DATE = 1922
 # ElasticSearch settings
@@ -25,6 +25,8 @@ ES_CLUSTER = 'http://localhost:9200/'
 ES_INDEX = 'kb'
 ES_TYPE = 'doc'
 es = ElasticSearch(ES_CLUSTER)
+# A list of Texan newspapers with high OCR quality (see http://mappingtexts.org/)
+HIGH_OCR = ['sn86064205', 'sn86090803', 'sn86071254', 'sn86089978', 'sn86089977', 'sn86090383']
 
 
 @site.route('/')
@@ -85,6 +87,8 @@ def search():
         search_term['date1'] = request.form['date1']
         search_term['date2'] = request.form['date2']
         search_term['dateFilterType'] = 'yearRange'
+        if request.form.getlist('highocr'):
+            search_term['lccn'] = HIGH_OCR
 
         mined = mine(saved_search, search_term)
         if mined:
