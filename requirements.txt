@@ -4,9 +4,9 @@
 #
 #    pip-compile requirements.in
 #
-amqp==1.4.7               # via kombu
+amqp==1.4.8               # via kombu
 anyjson==0.3.3            # via kombu
-billiard==3.3.0.21        # via celery
+billiard==3.3.0.22        # via celery
 celery==3.1.18
 certifi==2015.11.20.1     # via pyelasticsearch
 elasticsearch==1.9.0      # via pyelasticsearch
@@ -14,8 +14,9 @@ Flask-SQLAlchemy==2.1
 flask==0.10.1
 itsdangerous==0.24        # via flask
 jinja2==2.8               # via flask
-kombu==3.0.29             # via celery
+kombu==3.0.30             # via celery
 markupsafe==0.23          # via jinja2
+mysql-python==1.2.5
 pyelasticsearch==1.4
 pytz==2015.7              # via celery
 redis==2.10.5
