@@ -3,7 +3,7 @@ from celery import current_task
 
 from .extensions import db
 from .factories import create_celery
-from .models import Result
+from .models import SavedSearch, Result
 
 # Start with celery -A LoCMiner.tasks worker
 celery = create_celery()
@@ -26,6 +26,14 @@ def write_results(search_id, search_term, total_items):
         r = requests.get(BASE_URL + SEARCH_URL, params=search_term)
         end_index = write_result(search_id, r)
         current_task.update_state(state=IN_PROGRESS, meta={'current': end_index, 'total': total_items})
+        print '[search-id:{}] Currently at page {}, total items: {}.'.format(search_id, page, total_items)
+    else:
+        print '[search-id:{}] Finished, saving success state.'.format(search_id)
+        with celery.app.app_context():
+            ss = db.session.query(SavedSearch).get(search_id)
+            ss.task_status = 'SUCCESS'
+            db.session.add(ss)
+            db.session.commit()
 
 
 def write_result(search_id, r):
