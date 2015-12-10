@@ -19,7 +19,15 @@ For a local installation, the following steps should be sufficient:
     > pip install -r requirements.txt
     > python run.py
     
-You'll have to start Redis client and the Celery daemon as well if you want to run the background search tasks.
+This will start the web interface. To process searches, you should start 
+[Redis](http://redis.io/) (usually booted on start-up) and 
+[Celery](http://www.celeryproject.org/) (in a separate shell):
+
+    > celery -A LoCMiner.tasks worker
+    
+You can specify your settings in `LoCMiner/config.py`. 
+If you want to use the *DevelopmentConfig*, be sure to change this in 
+both `run.py` and `LoCMiner/factories.py`. 
 
 ## Front-end
 
@@ -34,7 +42,7 @@ The following JavaScript libraries are employed:
 
 ### Texcavator
 
-The application allows for synergy with the text mining tool [Texcavator](https://www.esciencecenter.nl/?/project/texcavator). 
+The application allows for synergy with the text mining tool [Texcavator](https://github.com/UUDigitalHumanitieslab/texcavator). 
 Your saved searches can be indexed to an [Elasticsearch](http://www.elasticsearch.org/) cluster via the 
 [pyelasticsearch](http://pyelasticsearch.readthedocs.org/en/latest/) package. 
 You can then freely search your results with Texcavator. 
@@ -49,4 +57,6 @@ Finally, the application allows for simple exports of both metadata (to a .csv-f
 
 ## Demo
 
-(TODO) A demonstrator will soon be set up. 
+A demonstrator is available [here](https://dhtest2.hum.uu.nl/locminer). Currently access is limited to a select
+number of Utrecht University students and employees. If you want a peek, contact the 
+[Digital Humanities lab](http://digitalhumanities.wp.hum.uu.nl/).

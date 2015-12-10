@@ -3,7 +3,7 @@ from celery import Celery
 
 from .extensions import db
 from .views import site
-from .config import DevelopmentConfig
+from .config import ProductionConfig
 
 
 def create_app(config):
@@ -19,7 +19,7 @@ def create_app(config):
 
 
 def create_celery(app=None):
-    app = app or create_app(DevelopmentConfig)
+    app = app or create_app(ProductionConfig)
     celery = Celery(app.import_name, broker=app.config['CELERY_BROKER_URL'])
     celery.conf.update(app.config)
     TaskBase = celery.Task
