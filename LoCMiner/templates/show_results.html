@@ -61,10 +61,10 @@
         <li>
             You can view a time chart of the results <a href="{{ url_for('.chart', search_id=saved_search.id) }}">here</a>.
         </li>
-        <li>
+        <!--<li>
             You can index your results for analysis with Texcavator <a
                 href="{{ url_for('.index', search_id=saved_search.id) }}">here</a>.
-        </li>
+        </li>-->
         <li>
             You could also analyze the results with <a href="http://voyant-tools.org/" target="_blank">Voyant</a>.
             Use the contents of <a href="{{ url_for('.download', search_id=saved_search.id) }}">this results file</a> as
