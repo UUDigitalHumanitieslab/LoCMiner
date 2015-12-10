@@ -81,6 +81,7 @@ def search():
         search_term = dict()
         search_term['format'] = 'json'
         search_term['page'] = 1
+        search_term['language'] = 'eng'
         search_term['ortext'] = request.form['ortext']
         search_term['andtext'] = request.form['andtext']
         search_term['phrasetext'] = request.form['phrasetext']
