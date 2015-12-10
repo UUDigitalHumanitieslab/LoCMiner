@@ -44,7 +44,7 @@ class Result(db.Model):
         self.publisher = result['publisher']
         self.language = self.as_list(result['language'])
         self.frequency = result['frequency']
-        self.ocr = result['ocr_eng']
+        self.ocr = result.get('ocr_eng', '')
 
     def __repr__(self):
         return '<Result %r>' % self.id
