@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='pure-min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='menu.css') }}">
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.3/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+    <script type="text/javascript" charset="utf8" src="//cdn.datatables.net/1.10.3/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="//code.highcharts.com/highcharts.js"></script>
+    <script type="text/javascript" charset="utf8" src="//code.highcharts.com/modules/drilldown.js"></script>
+    <title>{% block title %}{% endblock %} - LoCMiner</title>
+    {% endblock %}
+</head>
+<body>
+<div id="layout">
+    <!-- Menu toggle -->
+    <a href="#menu" id="menuLink" class="menu-link">
+        <!-- Hamburger icon -->
+        <span></span>
+    </a>
+
+    {% set navigation_bar = [
+        ('.home', 'home', 'Home'),
+        ('.search', 'search', 'Search'),
+        ('.show_searches', 'searches', 'Saved searches'),
+        ('.about', 'about', 'About')
+    ] -%}
+    {% set active_page = active_page|default('home') -%}
+    <div id="menu">
+        <div class="pure-menu pure-menu-open">
+            <a class="pure-menu-heading" href="#">Menu</a>
+
+            <ul>
+                {% for href, id, caption in navigation_bar %}
+                <li{% if id == active_page %} class="menu-item-divided pure-menu-selected"{% endif%}>
+                    <a href="{{ url_for(href) }}">{{ caption }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div id="main">
+        <div class="header">
+            <h1>LoCMiner</h1>
+            <h2>{% block header %}{% endblock %}</h2>
+        </div>
+
+        <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash">
+            {% for category, message in messages %}
+            <p class="{{ category }}">{{ message | safe }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='ui.js') }}"></script>
+</body>
+</html>

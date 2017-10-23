@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Show a Saved Search{% endblock %}
+{% block header %}Saved Search <em>{{ saved_search.name }}</em>{% endblock %}
+{% set active_page = 'searches' %}
+{% block content %}
+<script>
+    $(document).ready(function() {
+        $('#results_table').DataTable();
+
+        $('#progressbar').progressbar({
+            value: false,
+            change: function() {
+                $('.progress-label').text($('#progressbar').progressbar('value') + '%');
+            },
+            complete: function() {
+                $('.progress-label').text('Completed!');
+            }
+        });
+
+        // Poll on non-success states, otherwise hide the progress bar.
+        if ('{{ saved_search.task_status | string }}' !== 'SUCCESS') {
+            doPoll();
+            $('#results').hide();
+        }
+        else {
+            $('#progress').hide();
+        }
+    });
+
+    function doPoll()
+    {
+        $.get('{{ url_for('.state', search_id=saved_search.id) }}', function (data)
+        {
+            // Get the return value and set that in the progress bar
+            $('#progressbar').progressbar('value', data.result);
+            if (data.result === 100)
+            {
+                // Parsing completed! :)
+                isDone = true;
+                setTimeout(location.reload(), 2000);
+            }
+            else
+            {
+                // Re-poll after two seconds
+                setTimeout(doPoll, 2000);
+            }
+        });
+    }
+
+
+</script>
+<div id="progress">
+    <h3 class="content-subhead">Progress</h3>
+    <p>Your query is currently processing in the background. You can safely navigate away from this page.</p>
+    <div id="progressbar"><div class="progress-label">Pending...</div></div>
+</div>
+<div id="results">
+    <p>Your query yielded {{ results | count }} results.</p>
+    <h3 class="content-subhead">Analysis</h3>
+    <ul>
+        <li>
+            You can view a time chart of the results <a href="{{ url_for('.chart', search_id=saved_search.id) }}">here</a>.
+        </li>
+        <!--<li>
+            You can index your results for analysis with Texcavator <a
+                href="{{ url_for('.index', search_id=saved_search.id) }}">here</a>.
+        </li>-->
+        <li>
+            You could also analyze the results with <a href="http://voyant-tools.org/" target="_blank">Voyant</a>.
+            Use the contents of <a href="{{ url_for('.download', search_id=saved_search.id) }}">this results file</a> as
+            input there.
+        </li>
+    </ul>
+    <h3 class="content-subhead">Export</h3>
+    <ul>
+        <li>
+            You can download the metadata of the search results <a
+                href="{{ url_for('.metadata', search_id=saved_search.id) }}">here</a>.
+        </li>
+        <li>
+            You can download a .zip-file of all the OCR-files here <a
+                href="{{ url_for('.to_zip', search_id=saved_search.id) }}">here</a>.
+        </li>
+    </ul>
+    <h3 class="content-subhead">Results</h3>
+    <table id="results_table" class="display" cellspacing="0" width="100%">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Newspaper</th>
+            <th>Place</th>
+            <th>State</th>
+            <th>Publisher</th>
+            <th>Language</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in results %}
+        <tr>
+            <td>{{ r.date }}</td>
+            <td>{{ r.newspaper }}</td>
+            <td>{{ r.place }}</td>
+            <td>{{ r.state }}</td>
+            <td>{{ r.publisher }}</td>
+            <td>{{ r.language }}</td>
+            <td><a href="{{ b + r.lccn }}" target="_blank">URL</a>,
+                <a href="{{ b + r.lccn[:-1] + '.pdf' }}" target="_blank">PDF</a>,
+                <a href="{{ b + r.lccn + 'ocr.txt' }}" target="_blank">TXT</a>,
+                <a href="{{ url_for('.json_result', result_id=r.id) }}">JSON</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
