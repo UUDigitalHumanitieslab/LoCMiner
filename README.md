@@ -14,10 +14,14 @@ All requests to the Chronicling America collection are processed using the
 
 For a local installation, the following steps should be sufficient:
 
+    > sudo apt install postgresql
+
+Setup a PostgreSQL database user and place the database configuration in `config.py`.
+
     > git clone https://github.com/UUDigitalHumanitieslab/LoCMiner.git
     > cd LoCMiner
     > pip install -r requirements.txt
-    > python run.py
+    > python2 run.py
     
 This will start the web interface. To process searches, you should start 
 [Redis](http://redis.io/) (usually booted on start-up) and 
@@ -28,6 +32,8 @@ This will start the web interface. To process searches, you should start
 You can specify your settings in `LoCMiner/config.py`. 
 If you want to use the *DevelopmentConfig*, be sure to change this in 
 both `run.py` and `LoCMiner/factories.py`. 
+
+The user interface should now be reachable from `http://localhost:5000`.
 
 ## Front-end
 
